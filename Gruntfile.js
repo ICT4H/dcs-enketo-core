@@ -154,8 +154,8 @@ module.exports = function( grunt ) {
                         } );
                         return [ './bower-components/requirejs/require.js' ].concat( widgets );
                     } )(),
-                    out: "build/js/combined.min.js",
-                    optimize: "uglify2"
+                    out: "build/js/enketo.min.js",
+                    optimize: "none"
                 }
             }
         },
