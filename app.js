@@ -83,7 +83,9 @@ var loadEnketo = function(options){
                     var submission = {};
                     submission.project_id = options.project_id;
                     submission.xml = form.getDataStr();
-                    submission.html = submissionHtml(xmlToJson.xml_str2json(submission.xml)[form.getSurveyName()]);
+                    var json_data = xmlToJson.xml_str2json(submission.xml)[form.getSurveyName()];
+                    delete json_data.meta;
+                    submission.data = JSON.stringify(json_data);
                     submission.created = options.getDate();
 
                     if (options.submission_id == 'null') {
