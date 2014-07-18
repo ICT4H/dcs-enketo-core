@@ -50,6 +50,8 @@ requirejs( [ 'require-config' ], function( rc ) {
                     alert( 'Form is valid! (see XML record and media files in the console)' );
                     console.log( 'record:', form.getDataStr() );
                     console.log( 'media files:', fileManager.getCurrentFiles() );
+                    delete json_data.meta;
+                    submission.data = JSON.stringify(json_data);
 
                     if (options.submission_id == 'null') {
                         localStore.createSubmission(submission).then(function(submission) {
