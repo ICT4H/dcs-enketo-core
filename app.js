@@ -65,6 +65,7 @@ var loadEnketo = function(options){
                     //this replacement should move to XSLT after which the GET can just return 'xml' and $data = $(data)
                     data = data.replace( /jr\:template=/gi, 'template=' );
                     $data = $( $.parseXML( data ) );
+                    $($data.find( 'form:eq(0)' )[0]).find("#form-title").remove();
                     formStr = ( new XMLSerializer() ).serializeToString( $data.find( 'form:eq(0)' )[ 0 ] );
                     modelStr = ( new XMLSerializer() ).serializeToString( $data.find( 'model:eq(0)' )[ 0 ] );
                     $( '#validate-form' ).before( formStr );
