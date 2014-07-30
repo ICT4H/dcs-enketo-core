@@ -61,7 +61,7 @@ var loadEnketo = function(options){
         }
 
         var edit_xml = "";
-        var data, generatedName;
+        var data;
             localStore.getProjectById(options.project_id).then(function(project){
                 data = project.xform;
                 localStore.getSubmissionById(options.submission_id).then(function(submission){
@@ -74,9 +74,7 @@ var loadEnketo = function(options){
                     //this replacement should move to XSLT after which the GET can just return 'xml' and $data = $(data)
                     data = data.replace( /jr\:template=/gi, 'template=' );
                     $data = $( $.parseXML( data ) );
-                    var titleNode = $($data.find( 'form:eq(0)' )[0]).find("#form-title");
-                    generatedName = titleNode.text();
-                    titleNode.remove();
+                    $($data.find( 'form:eq(0)' )[0]).find("#form-title").remove();
                     formStr = ( new XMLSerializer() ).serializeToString( $data.find( 'form:eq(0)' )[ 0 ] );
                     modelStr = ( new XMLSerializer() ).serializeToString( $data.find( 'model:eq(0)' )[ 0 ] );
                     $( '#validate-form' ).before( formStr );
@@ -95,8 +93,18 @@ var loadEnketo = function(options){
                     var submission = {};
                     submission.project_id = options.project_id;
                     submission.xml = form.getDataStr();
-                    var json_data = xmlToJson.xml_str2json(submission.xml)[generatedName];
+                    var parsedData = xmlToJson.xml_str2json(submission.xml);
+                    for(k in parsedData) // this will loop once
+                        var json_data = parsedData[k];
                     delete json_data.meta;
+                    var value;
+                    // TODO update to support repeat inside group
+                    for (var dataIndex in json_data) {
+                        value = json_data[dataIndex];
+                        // hack to make single repeat data in array as xml_to_json for single child converts to object than object array
+                        if (typeof value == "object" && !(value instanceof Array))
+                            json_data[dataIndex] = [value];
+                    };
                     submission.data = JSON.stringify(json_data);
                     submission.created = options.getDate();
 >>>>>>> Suraj/Yogesh || Fix empty project name during edit/save of submission
