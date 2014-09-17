@@ -41,6 +41,7 @@ requirejs.config( {
 
 var loadEnketo = function(options){
     var localStore = options.localStore;
+
     requirejs( [ 'jquery', 'Modernizr', 'enketo-js/Form'],
     function( $, Modernizr, Form) {
         var loadErrors;
@@ -51,30 +52,38 @@ var loadEnketo = function(options){
             $( 'html' ).addClass( 'touch' );
         }
 
-        var edit_xml = "";
-        var data;
-            localStore.getProjectById(options.project_id).then(function(project){
-                data = project.xform;
-                localStore.getSubmissionById(options.submission_id).then(function(submission){
-                    if(submission != undefined){
-                        edit_xml = submission.xml;
-                    }
-                    $( '.guidance' ).remove();
-                    // global to support update
-                    // global_data = result;
-                    //this replacement should move to XSLT after which the GET can just return 'xml' and $data = $(data)
-                    data = data.replace( /jr\:template=/gi, 'template=' );
-                    $data = $( $.parseXML( data ) );
-                    $($data.find( 'form:eq(0)' )[0]).find("#form-title").remove();
-                    formStr = ( new XMLSerializer() ).serializeToString( $data.find( 'form:eq(0)' )[ 0 ] );
-                    modelStr = ( new XMLSerializer() ).serializeToString( $data.find( 'model:eq(0)' )[ 0 ] );
-                    $( '#validate-form' ).before( formStr );
-                    initializeForm(edit_xml);
-                });
+        localStore.getProjectById(options.project_uuid).then(function(project){
+            var data = project.xform;
+            var edit_xml = "";
+            
+            var submissionPromise;
+            if(options.isServerSubmission)
+                submissionPromise = options.getSubmissionFromServer(options.submission_id);
+            else
+                submissionPromise = localStore.getSubmissionById(options.submission_id);
+
+            submissionPromise.then(function(submission){
+                if(options.submission_id != "null"){
+                    edit_xml = submission.xml;
+                    console.log('saved submission.xml: ' + submission.xml);
+                }
+                $( '.guidance' ).remove();
+                data = data.replace( /jr\:template=/gi, 'template=' );
+                $data = $( $.parseXML( data ) );
+                $($data.find( 'form:eq(0)' )[0]).find("#form-title").remove();
+                formStr = ( new XMLSerializer() ).serializeToString( $data.find( 'form:eq(0)' )[ 0 ] );
+                modelStr = ( new XMLSerializer() ).serializeToString( $data.find( 'model:eq(0)' )[ 0 ] );
+                $( '#validate-form' ).before( formStr );
+                initializeForm(edit_xml);
             });
+        });
 
         //validate handler for validate button
+
         var button = $( '#validate-form' );
+        if(options.isServerSubmission)
+            button.hide();
+
         button.html(options.buttonLabel);
         button.on( 'click', function() {
             form.validate();
@@ -82,12 +91,16 @@ var loadEnketo = function(options){
                 options.onError('error!!!');
             } else {
                     var submission = {};
-                    submission.project_id = options.project_id;
+                    submission.project_uuid = options.project_uuid;
                     submission.xml = form.getDataStr();
+                    console.log('output submission.xml: ' + submission.xml);
+
                     var parsedData = xmlToJson.xml_str2json(submission.xml);
                     for(k in parsedData) // this will loop once
                         var json_data = parsedData[k];
+
                     delete json_data.meta;
+
                     var value;
                     // TODO update to support repeat inside group
                     for (var dataIndex in json_data) {
@@ -96,28 +109,26 @@ var loadEnketo = function(options){
                         if (typeof value == "object" && !(value instanceof Array))
                             json_data[dataIndex] = [value];
                     };
+
                     submission.data = JSON.stringify(json_data);
                     submission.created = options.getDate();
 
                     if (options.submission_id == 'null') {
                         localStore.createSubmission(submission).then(function(submission) {
                             form.resetView();
+                            initializeForm("");
                             options.onSuccess('Saved');
-                            localStore.updateSubmissionStatus(submission.submission_id, 'changed');
                         }, function(error) {
                             console.log(error);
                         });
                     } else {
-                        localStore.updateSubmissionData(options.submission_id, submission).then(function() {
-                            form.resetView();
+                        localStore.updateSubmission(options.submission_id, submission).then(function() {
                             options.onSuccess('Updated');
-                            localStore.updateSubmissionStatus(options.submission_id, 'changed');
+                            options.redirect("/submission-list/" + options.project_uuid);
                         }, function(error) {
                             console.log(error);
-                        });
+                        }); 
                     }
-
-                     
             }
 
           });
@@ -142,27 +153,6 @@ var loadEnketo = function(options){
                 ( RegExp( name + '=' + '(.+?)(&|$)' ).exec( location.search ) || [ , null ] )[ 1 ]
             );
         }
-
-        var excludeMap = {'_id':true, 'eid': true, 'form_code': true, 'meta': true};
-
-        function submissionHtml(data){
-           var html = '<ul>';
-           for(item in data){
-               if(excludeMap[item])
-                    continue;
-                
-               html += '<li>';               
-               if(typeof(data[item]) === 'object'){ // An array will return 'object'
-                       html += item; // Submenu found, but top level list item.
-                       html += ':'+ submissionHtml(data[item]); // Submenu found. Calling recursively same method (and wrapping it in a div)
-               } else {
-                   html += item + ':' + data[item]; // No submenu
-               }
-               html += '</li>';
-           }
-           html += '</ul>';
-           return html;
-       }
-
     });
 };
+
