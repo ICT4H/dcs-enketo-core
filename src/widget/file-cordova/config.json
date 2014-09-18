@@ -1,0 +1,6 @@
+{
+	"name": "cordovaFilepicker",
+	"stylesheet": "cordova-filepicker.scss",
+	"selector": "input[type=\"file\"]",
+	"options": {}
+}

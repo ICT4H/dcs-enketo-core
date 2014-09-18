@@ -1,5 +1,5 @@
 requirejs.config( {
-    baseUrl: "../lib",
+    baseUrl: "enketo-core/lib",
     paths: {
         "enketo-js": "../src/js",
         "enketo-widget": "../src/widget",
@@ -38,6 +38,14 @@ requirejs.config( {
         }
     }
 } );
+
+define('jquery', [], function() {
+    return jQuery;
+});
+
+define('cordovaMediaManager', [], function() {
+    return cordovaMediaManager;
+});
 
 var loadEnketo = function(options){
     var localStore = options.localStore;
@@ -112,9 +120,13 @@ var loadEnketo = function(options){
 
                     submission.data = JSON.stringify(json_data);
                     submission.created = options.getDate();
+                    addMediaInfo(submission);
 
                     if (options.submission_id == 'null') {
+                        console.log('submission keys after addMediaInfo: ' + Object.keys(submission));
+                        console.log('saving submission: ' + JSON.stringify(submission));
                         localStore.createSubmission(submission).then(function(submission) {
+                            console.log('submission keys while saving: ' + Object.keys(submission));
                             form.resetView();
                             initializeForm("");
                             options.onSuccess('Saved');
@@ -144,6 +156,28 @@ var loadEnketo = function(options){
             if ( loadErrors.length > 0 ) {
                 alert( 'loadErrors: ' + loadErrors.join( ', ' ) );
             }
+        }
+
+        function addMediaInfo(submission) {
+            var newFilesAdded = [], unChangedFiles = [];
+            var mediaInputs = $('form.or input[type="file"]') || [];
+            console.log('mediaInputs + ' + mediaInputs + '; length: ' + mediaInputs.length);
+
+            $.each(mediaInputs, function() {
+                var newFileInputed = $(this).attr('data-previous-file-name');
+                console.log('newFileInputed + ' + newFileInputed);
+                if (newFileInputed) {
+                    newFilesAdded.push(newFileInputed);
+                }
+                var unChangedFile = $(this).attr('data-loaded-file-name');
+                if (unChangedFile) {
+                    unChangedFiles.push(unChangedFile);
+                }
+            });
+            console.log('newFilesAdded: ' + newFilesAdded.join(',') + '; unChangedFiles: ' + unChangedFiles.join(','));
+            submission.new_files_added = newFilesAdded.join(',');
+            submission.un_changed_files = unChangedFiles.join(',');
+            console.log('submission keys in addMediaInfo: ' + Object.keys(submission));
         }
 
         //get query string parameter
