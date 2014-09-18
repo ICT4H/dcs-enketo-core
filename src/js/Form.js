@@ -1829,6 +1829,8 @@ define( [ 'enketo-js/FormModel', 'enketo-js/widgets', 'jquery', 'enketo-js/plugi
                     // set file input values to the actual name of file (without c://fakepath or anything like that)
                     if ( n.val.length > 0 && n.inputType === 'file' && $( this )[ 0 ].files[ 0 ] && $( this )[ 0 ].files[ 0 ].size > 0 ) {
                         n.val = $( this )[ 0 ].files[ 0 ].name;
+                    } else if ( n.inputType === 'file' && $( this ).attr('data-previous-file-name') && $( this ).attr('data-previous-file-name').length > 0 ) {
+                        n.val = $( this ).attr('data-previous-file-name');
                     }
 
                     if ( event.type === 'validate' ) {
