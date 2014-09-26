@@ -158,6 +158,7 @@ var loadEnketo = function(options){
                     newFilesAdded.push(newFileInputed);
                 }
                 var unChangedFile = $(this).attr('data-loaded-file-name');
+                console.log('unChangedFile + ' + unChangedFile);
                 if (unChangedFile) {
                     unChangedFiles.push(unChangedFile);
                 }

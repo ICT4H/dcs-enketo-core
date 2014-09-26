@@ -49,27 +49,14 @@ define( [ 'jquery', 'enketo-js/Widget', 'cordovaMediaManager' ], function( $, Wi
         this.$fakeInput = this.$widget.find( '.fake-file-input' );
 
         console.log('existingFileName : ' + existingFileName);
-        // show loaded file name regardless of whether widget is supported
         if ( existingFileName ) {
             this._showFileName(existingFileName);
-            $input.removeAttr( 'data-loaded-file-name' );
             cordovaMediaManager.fileNameToURL(existingFileName, function(url) {
                 that._showPreview(url, that.mediaType);    
             });
-            
         }
 
-        //TODO enable this message
-        // if ( !fileManager || !fileManager.isSupported() ) {
-        //     this._showFeedback( 'File Uploads not supported in this browser.', 'warning' );
-        //     return;
-        // }
-
-        //TODO move adding listerner after mediaMgr is ready
-        // this._changeListener();
-
         if ( navigator && navigator.camera ) {
-            //TODO hide/disable the input file. Check model is updated, as it may not pick the disabled inputs.
             addCustomMediaButtons(that);
         }
     };
@@ -135,16 +122,13 @@ define( [ 'jquery', 'enketo-js/Widget', 'cordovaMediaManager' ], function( $, Wi
     function updateView(that, imageUrl, newFileName) {
         console.log('in updateView');
         var $input = $( that.element );
-        console.log('input: '+that.element);
+
         $input.attr('data-previous-file-name', newFileName);
-        console.log('data-previous-file-name: '+newFileName);
+        $input.removeAttr( 'data-loaded-file-name' );
         that._showPreview( imageUrl, that.mediaType );
-        console.log('imageUrl: '+ imageUrl);
         that._showFeedback( '' );
         that._showFileName( newFileName );
-        console.log('newFileName: '+newFileName);
         $input.trigger( 'change.file' );
-        console.log('triggered change.file');
 
     }
 
@@ -153,20 +137,6 @@ define( [ 'jquery', 'enketo-js/Widget', 'cordovaMediaManager' ], function( $, Wi
         return maxSize || 5 * 1024 * 1024;
     };
 
-    // CordovaFilepicker.prototype._changeListener = function() {
-    //     var $input = $( this.element );
-    //     $input.on( 'change.passthrough.' + this.namespace, function( event ) {
-            
-    //         //console.debug( 'namespace: ' + event.namespace );
-    //         if ( event.namespace === 'passthrough' ) {
-    //             //console.debug('returning true');
-    //             $input.trigger( 'change.file' );
-    //             return false;
-    //         }
-            
-    //         return true;
-    //     } );
-    // };
 
     CordovaFilepicker.prototype._showFileName = function( file ) {
         var fileName = ( typeof file === 'object' && file.name ) ? file.name : file;
