@@ -52,8 +52,7 @@ var loadEnketo = function(options){
 
     requirejs( [ 'jquery', 'Modernizr', 'enketo-js/Form'],
     function( $, Modernizr, Form) {
-        var loadErrors;
-        var global_data;
+        var loadErrors, global_data, submission_uuid;
         //if querystring touch=true is added, override Modernizr
         if ( getURLParameter( 'touch' ) === 'true' ) {
             Modernizr.touch = true;
@@ -73,7 +72,8 @@ var loadEnketo = function(options){
             submissionPromise.then(function(submission){
                 if(options.submission_id != "null"){
                     edit_xml = submission.xml;
-                    console.log('saved submission.xml: ' + submission.xml);
+                    submission_uuid = submission.submission_uuid;
+                    console.log('loaded from db submission.xml: ' + submission.xml);
                 }
                 $( '.guidance' ).remove();
                 data = data.replace( /jr\:template=/gi, 'template=' );
@@ -120,27 +120,15 @@ var loadEnketo = function(options){
 
                     submission.data = JSON.stringify(json_data);
                     submission.created = options.getDate();
-                    addMediaInfo(submission);
+                    submission.submission_id = options.submission_id;
+                    if (submission_uuid)
+                        submission.submission_uuid = submission_uuid;
 
-                    if (options.submission_id == 'null') {
-                        console.log('submission keys after addMediaInfo: ' + Object.keys(submission));
-                        console.log('saving submission: ' + JSON.stringify(submission));
-                        localStore.createSubmission(submission).then(function(submission) {
-                            console.log('submission keys while saving: ' + Object.keys(submission));
-                            form.resetView();
-                            initializeForm("");
-                            options.onSuccess('Saved');
-                        }, function(error) {
-                            console.log(error);
-                        });
-                    } else {
-                        localStore.updateSubmission(options.submission_id, submission).then(function() {
-                            options.onSuccess('Updated');
-                            options.redirect("/submission-list/" + options.project_uuid);
-                        }, function(error) {
-                            console.log(error);
-                        }); 
-                    }
+                    addMediaInfo(submission);
+                    options.saveSubmission(submission, function() {
+                        form.resetView();
+                        initializeForm("");
+                    });
             }
 
           });
