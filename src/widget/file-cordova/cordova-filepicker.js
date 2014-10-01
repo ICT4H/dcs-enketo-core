@@ -1,4 +1,4 @@
-define( [ 'jquery', 'enketo-js/Widget', 'cordovaMediaManager' ], function( $, Widget, cordovaMediaManager ) {
+define( [ 'jquery', 'enketo-js/Widget', 'cordovaFileSystem', 'cordovaMediaManager' ], function( $, Widget, fs, cordovaMediaManager ) {
     "use strict";
 
     var pluginName = 'cordovaFilepicker';
@@ -27,8 +27,9 @@ define( [ 'jquery', 'enketo-js/Widget', 'cordovaMediaManager' ], function( $, Wi
         var $input = $( this.element ),
             existingFileName = $input.attr( 'data-loaded-file-name' ),
             that = this;
-        
+
         this.mediaType = $input.attr( 'accept' );
+        console.log('mediatype: ' + this.mediaType)
 
         $input
             .attr( 'disabled', 'disabled' )
@@ -51,25 +52,44 @@ define( [ 'jquery', 'enketo-js/Widget', 'cordovaMediaManager' ], function( $, Wi
         console.log('existingFileName : ' + existingFileName);
         if ( existingFileName ) {
             this._showFileName(existingFileName);
-            cordovaMediaManager.fileNameToURL(existingFileName, function(url) {
+            fs.fileNameToURL(existingFileName, function(url) {
                 that._showPreview(url, that.mediaType);    
             });
         }
 
-        if ( navigator && navigator.camera ) {
-            addCustomMediaButtons(that);
+        if ( navigator && navigator.device.capture.captureVideo ) {
+            addCustomMediaButtons(this);
         }
     };
 
     function addCustomMediaButtons(that) {
-        addCameraHandlers(that);
-        addGalleryHandlers(that);
+        var handlers = {'image/*': addPhotoHandlers,
+            'video/*': addVideoHandlers,
+            'audio/*': addAudioHandlers
+        };
+        handlers[that.mediaType](that);
+        // addCameraHandlers(that);
+        // addGalleryHandlers(that);
     }
 
-    function addCameraHandlers(that) {
+    function addPhotoHandlers(that) {
         var callbacks = _getFileSeletedCallbacks(that);
 
         var captureButton = createCameraButton(callbacks);
+        that.$mediaButtons.append(captureButton);
+    }
+
+    function addVideoHandlers(that) {
+        var callbacks = _getFileSeletedCallbacks(that);
+
+        var captureButton = createVideoButton(callbacks);
+        that.$mediaButtons.append(captureButton);
+    }
+
+    function addAudioHandlers(that) {
+        var callbacks = _getFileSeletedCallbacks(that);
+
+        var captureButton = createAudioButton(callbacks);
         that.$mediaButtons.append(captureButton);
     }
 
@@ -94,7 +114,25 @@ define( [ 'jquery', 'enketo-js/Widget', 'cordovaMediaManager' ], function( $, Wi
         return getButton({
             label: 'Camera',
             clickHandler: function() {
-                cordovaMediaManager.captureAndMove(callbacks);
+                cordovaMediaManager.capturePhotoAndMove(callbacks);
+            }
+        });
+    }
+
+    function createVideoButton(callbacks) {
+        return getButton({
+            label: 'Video',
+            clickHandler: function() {
+                cordovaMediaManager.captureVideoAndMove(callbacks);
+            }
+        });
+    }
+
+    function createAudioButton(callbacks) {
+        return getButton({
+            label: 'Audio',
+            clickHandler: function() {
+                cordovaMediaManager.captureAudioAndMove(callbacks);
             }
         });
     }
