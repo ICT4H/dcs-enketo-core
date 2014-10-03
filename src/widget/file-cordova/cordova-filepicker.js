@@ -1,4 +1,4 @@
-define( [ 'jquery', 'enketo-js/Widget', 'cordovaFileSystem', 'cordovaMediaManager' ], function( $, Widget, fs, cordovaMediaManager ) {
+define( [ 'jquery', 'enketo-js/Widget', 'fileSystem', 'cordovaMediaManager' ], function( $, Widget, fs, cordovaMediaManager ) {
     "use strict";
 
     var pluginName = 'cordovaFilepicker';
@@ -57,105 +57,19 @@ define( [ 'jquery', 'enketo-js/Widget', 'cordovaFileSystem', 'cordovaMediaManage
             });
         }
 
+        // TODO based on media type do the navigator check
         if ( navigator && navigator.device.capture.captureVideo ) {
-            addCustomMediaButtons(this);
+            var mediaButton = new MediaButton();
+            mediaButton.appendMediaButton(this.$mediaButtons, this.mediaType, fs,
+                {success: function(newFileUrl, newFileName) {
+                    updateView(that, newFileUrl, newFileName);
+                }, error: function() {
+                    //TODO fix when fail to load media, but previous preview & file_name exists
+                    that._showFeedback( 'Media not selected.', 'warning' );
+                }
+            });
         }
     };
-
-    function addCustomMediaButtons(that) {
-        var handlers = {'image/*': addPhotoHandlers,
-            'video/*': addVideoHandlers,
-            'audio/*': addAudioHandlers
-        };
-        handlers[that.mediaType](that);
-        // addCameraHandlers(that);
-        // addGalleryHandlers(that);
-    }
-
-    function addPhotoHandlers(that) {
-        var callbacks = _getFileSeletedCallbacks(that);
-
-        var captureButton = createCameraButton(callbacks);
-        that.$mediaButtons.append(captureButton);
-    }
-
-    function addVideoHandlers(that) {
-        var callbacks = _getFileSeletedCallbacks(that);
-
-        var captureButton = createVideoButton(callbacks);
-        that.$mediaButtons.append(captureButton);
-    }
-
-    function addAudioHandlers(that) {
-        var callbacks = _getFileSeletedCallbacks(that);
-
-        var captureButton = createAudioButton(callbacks);
-        that.$mediaButtons.append(captureButton);
-    }
-
-    function addGalleryHandlers(that) {
-        var callbacks = _getFileSeletedCallbacks(that);
-
-        var galleryButton = createGalleryButton(callbacks);
-        that.$mediaButtons.append(galleryButton);
-    }
-
-    function _getFileSeletedCallbacks(that) {
-        return {
-            success: function(newFileUrl, newFileName) {
-                updateView(that, newFileUrl, newFileName)
-            }, error: function() {
-                console.log('error in postCapture');
-            }
-        };
-    }
-
-    function createCameraButton(callbacks) {
-        return getButton({
-            label: 'Camera',
-            clickHandler: function() {
-                cordovaMediaManager.capturePhotoAndMove(callbacks);
-            }
-        });
-    }
-
-    function createVideoButton(callbacks) {
-        return getButton({
-            label: 'Video',
-            clickHandler: function() {
-                cordovaMediaManager.captureVideoAndMove(callbacks);
-            }
-        });
-    }
-
-    function createAudioButton(callbacks) {
-        return getButton({
-            label: 'Audio',
-            clickHandler: function() {
-                cordovaMediaManager.captureAudioAndMove(callbacks);
-            }
-        });
-    }
-
-    function createGalleryButton(callbacks) {
-        return getButton({
-            label: 'Gallery',
-            clickHandler: function() {
-                cordovaMediaManager.copyFromGallery(callbacks);
-            }
-        });
-    }
-
-    function getButton(options) {
-        return $('<button />', {
-            type  : 'button',
-            html : options.label,
-            id    : 'btn_capture',
-            on    : {
-                click: options.clickHandler
-            }
-        });
-    }
 
     function updateView(that, imageUrl, newFileName) {
         console.log('in updateView');

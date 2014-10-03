@@ -43,8 +43,8 @@ define('jquery', [], function() {
     return jQuery;
 });
 
-define('cordovaFileSystem', [], function() {
-    return cordovaFileSystem;
+define('fileSystem', [], function() {
+    return fileSystem;
 });
 
 define('cordovaMediaManager', [], function() {
