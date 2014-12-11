@@ -1,4 +1,4 @@
-define( [ 'jquery', 'enketo-js/Widget', 'fileSystem', 'deviceHandler' ], function( $, Widget, fs, deviceHandler ) {
+define( [ 'jquery', 'enketo-js/Widget', 'fileSystem', 'deviceHandler' ], function( $, Widget, fileSystem, deviceHandler ) {
     "use strict";
 
     var pluginName = 'cordovaFilepicker';
@@ -36,12 +36,12 @@ define( [ 'jquery', 'enketo-js/Widget', 'fileSystem', 'deviceHandler' ], functio
         console.log('existingFileName : ' + existingFileName);
         if ( existingFileName ) {
             this._showFileName(existingFileName);
-            fs.fileNameToURL(existingFileName, function(url) {
+            fileSystem.fileNameToURL(existingFileName, function(url) {
                 that._showPreview(url, that.mediaType);
             });
         }
 
-        addMediaButtons(this, fs);
+        addMediaButtons(this, fileSystem);
     };
 
     function initViewElements(that) {
@@ -65,22 +65,33 @@ define( [ 'jquery', 'enketo-js/Widget', 'fileSystem', 'deviceHandler' ], functio
         that.$fakeInput = that.$widget.find( '.fake-file-input' );
     }
 
-    function addMediaButtons(that, fs) {
+    function addMediaButtons(that, fileSystem) {
         // TODO based on media type do the navigator check
         if ( navigator && navigator.device.capture.captureVideo ) {
-            
-            var mediaButton = new MediaButton(deviceHandler, fs);
-            
-            mediaButton.addButtons(that.$buttonContainer, that.mediaType, {
-                success: function(fileUrl, fileName) {
-                    updateView(that, fileUrl, fileName);
-                }, 
-                error: function() {
-                    //TODO fix when fail to load media, but previous preview & file_name exists
-                    that._showFeedback( 'Media not selected.', 'warning' );
-                }
-            });
+            // this object should be a dependency
+            var buttonFactory = new ButtonFactory(deviceHandler, fileSystem);
+            var $buttons = buttonFactory.getButtons(that.mediaType, widgetCallbacks(that));
+
+            appendButtons(that.$buttonContainer, $buttons);
         }
+    }
+
+    function appendButtons($containter, $buttons) {
+        $.each($buttons, function(i, $button) {
+            $containter.append($button);
+        })
+    }
+
+    function widgetCallbacks(that) {
+        return {
+            success: function(fileUrl, fileName) {
+                updateView(that, fileUrl, fileName);
+            },
+            error: function() {
+                //TODO fix when fail to load media, but previous preview & file_name exists
+                that._showFeedback( 'Media not selected.', 'warning' );
+            }
+        };
     }
 
     function updateView(that, mediaUrl, fileName) {
