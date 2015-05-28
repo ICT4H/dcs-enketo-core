@@ -187,4 +187,5 @@ define( [ 'jquery', 'enketo-js/Widget', 'fileSystem', 'deviceHandler' ], functio
         } );
     };
 
+    return pluginName;
 } );
