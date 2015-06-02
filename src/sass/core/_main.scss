@@ -116,7 +116,7 @@ $media-margin: 10px;
 }
 
 .question {
-    @include font-bold;
+    @include font-normal;
     display: block;
     margin: 0 0 9px 0;
     padding-top: 15px;
@@ -371,7 +371,7 @@ select {
 }
 
 .or-required-msg.active, .or-constraint-msg.active {
-    @include font-bold;
+    @include font-normal;
     padding-top: 5px;
     font-size: 0.85em;
     color: $state-danger-text;
